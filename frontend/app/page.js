@@ -145,10 +145,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen px-4 py-10">
       <div className="mx-auto w-full max-w-5xl space-y-5">
-        <section className="rounded-xl border border-slate-700 bg-surface-elevated/90 p-6">
+        <section className="rounded-xl border border-slate-300 bg-white/90 p-6 dark:border-slate-700 dark:bg-surface-elevated/90">
           <p className="text-xs uppercase tracking-[0.18em] text-accent">ParrotPass</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">NFT-Gated Rank Dashboard</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-300">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">NFT-Gated Rank Dashboard</h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-700 dark:text-slate-300">
             Verify your Monad wallet, connect X, and generate your shareable ParrotPass activity card.
           </p>
         </section>
@@ -179,19 +179,20 @@ export default function HomePage() {
 
         {canRenderCard && (
           <>
-            <section className="rounded-xl border border-slate-700 bg-surface-elevated/90 p-5">
-              <h2 className="text-base font-semibold text-white">Activity + rank summary</h2>
+            <section className="rounded-xl border border-slate-300 bg-white/90 p-5 dark:border-slate-700 dark:bg-surface-elevated/90">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Activity + rank summary</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <SummaryItem label="Total Transactions" value={String(activity.totalTransactions)} />
                 <SummaryItem label="Tier" value={activity.tierName} />
                 <SummaryItem label="NFTs Owned" value={String(nftCount)} />
               </div>
-              <p className="mt-3 text-sm text-slate-300">{activity.tierRemark}</p>
+              <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">{activity.tierRemark}</p>
             </section>
 
-            <section className="rounded-xl border border-slate-700 bg-surface-elevated/90 p-5">
-              <h2 className="text-base font-semibold text-white">Download card preview</h2>
-              <div className="mt-4 flex justify-center">
+            <section className="rounded-xl border border-slate-300 bg-white/90 p-5 dark:border-slate-700 dark:bg-surface-elevated/90">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Download card preview</h2>
+              <div className="mt-4 overflow-x-auto">
+                <div className="mx-auto w-fit">
                 <DashboardCard
                   ref={cardRef}
                   xUsername={xProfile.username}
@@ -202,16 +203,17 @@ export default function HomePage() {
                   tierName={activity.tierName}
                   tierRemark={activity.tierRemark}
                 />
+                </div>
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-700 bg-surface-elevated/90 p-5">
+            <section className="rounded-xl border border-slate-300 bg-white/90 p-5 dark:border-slate-700 dark:bg-surface-elevated/90">
               <DownloadActions
                 cardRef={cardRef}
                 fileName={`parrotpass-${selectedAddress.slice(2, 8)}.png`}
                 onMessage={setActionMessage}
               />
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
                 X cannot auto-attach local files in this flow. Download the card, then upload it in the tweet composer.
               </p>
               {actionMessage ? <p className="mt-2 text-xs text-accent">{actionMessage}</p> : null}
@@ -219,9 +221,9 @@ export default function HomePage() {
           </>
         )}
 
-        <footer className="pb-4 pt-1 text-center text-xs text-slate-500">
+        <footer className="pb-4 pt-1 text-center text-xs text-slate-600 dark:text-slate-500">
           Need help? Confirm your X app callback URL is set to{" "}
-          <span className="text-slate-300">http://localhost:5000/auth/x/callback</span>.
+          <span className="text-slate-700 dark:text-slate-300">http://localhost:5000/auth/x/callback</span>.
         </footer>
       </div>
     </main>
@@ -230,9 +232,9 @@ export default function HomePage() {
 
 function SummaryItem({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-100">{value}</p>
+    <div className="rounded-lg border border-slate-300 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/70">
+      <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   );
 }

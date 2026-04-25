@@ -34,7 +34,7 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       >
         Download Card
       </button>
-      <button onClick={onShare} className="text-xs font-medium text-slate-400 hover:text-slate-200">
+      <button onClick={onShare} className="text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
         Share on X
       </button>
     </div>

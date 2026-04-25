@@ -29,7 +29,7 @@ const DashboardCard = forwardRef(function DashboardCard(
   }, [xProfileImageUrl]);
 
   return (
-    <div className="relative mx-auto w-full max-w-5xl">
+    <div className="relative mx-auto w-[760px] min-w-[760px] max-w-none">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-[28px] bg-[radial-gradient(circle_at_25%_20%,rgba(99,102,241,0.15),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(56,189,248,0.1),transparent_45%)] blur-2xl" />
       <div
         ref={ref}

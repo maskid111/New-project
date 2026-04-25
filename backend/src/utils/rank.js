@@ -2,62 +2,62 @@ const activityTiers = [
   {
     min: 0,
     max: 0,
-    name: "Silent Parrot",
-    remark: "Just watching from the tree"
+    name: "Sleeping Wing",
+    remark: "Not active yet... but you're here."
   },
   {
     min: 1,
-    max: 50,
-    name: "Curious Chick",
-    remark: "Testing the waters"
+    max: 9,
+    name: "New Feather",
+    remark: "Just getting started... we see you."
   },
   {
-    min: 51,
-    max: 100,
-    name: "Flapping Rookie",
-    remark: "Getting active"
+    min: 10,
+    max: 29,
+    name: "Perch Watcher",
+    remark: "Watching closely... moving carefully."
   },
   {
-    min: 101,
-    max: 500,
-    name: "Sky Explorer",
-    remark: "Flying across Monad"
+    min: 30,
+    max: 79,
+    name: "Wild Feather",
+    remark: "Unpredictable... but active."
   },
   {
-    min: 501,
-    max: 1000,
-    name: "Chain Surfer",
-    remark: "Riding transactions daily"
+    min: 80,
+    max: 149,
+    name: "Signal Catcher",
+    remark: "You know when to move."
   },
   {
-    min: 1001,
-    max: 5000,
-    name: "Parrot Pro",
-    remark: "Deep in the ecosystem"
+    min: 150,
+    max: 299,
+    name: "Steady Wing",
+    remark: "Consistent... no noise needed."
   },
   {
-    min: 5001,
-    max: 10000,
-    name: "Squad Captain",
-    remark: "Leading the flock"
+    min: 300,
+    max: 599,
+    name: "Sharp Beak",
+    remark: "You move with intention."
   },
   {
-    min: 10001,
-    max: 25000,
-    name: "Onchain General",
-    remark: "Heavy chain activity"
+    min: 600,
+    max: 999,
+    name: "Sky Hunter",
+    remark: "You don't hesitate... you act."
   },
   {
-    min: 25001,
-    max: 50000,
-    name: "Monad Legend",
-    remark: "Elite status unlocked"
+    min: 1000,
+    max: 1999,
+    name: "Relentless Wing",
+    remark: "Always in motion... no slowdowns."
   },
   {
-    min: 50001,
+    min: 2000,
     max: Number.POSITIVE_INFINITY,
-    name: "Parrot Overlord",
-    remark: "You run the skies"
+    name: "High Flyer",
+    remark: "Already ahead... still moving."
   }
 ];
 

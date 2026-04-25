@@ -3,7 +3,15 @@
 @tailwind utilities;
 
 body {
-  @apply bg-surface text-slate-100 antialiased;
-  background-image: radial-gradient(circle at 12% 8%, rgba(168, 85, 247, 0.12), transparent 38%),
-    radial-gradient(circle at 88% 16%, rgba(14, 165, 233, 0.12), transparent 32%);
+  background-color: #f4edf8;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.76)), url("/10kart.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-color: #070b17;
+  background-image: linear-gradient(rgba(3, 7, 18, 0.72), rgba(3, 7, 18, 0.72)), url("/10kart.jpg");
 }
