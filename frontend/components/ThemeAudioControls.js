@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 
 const STORAGE_THEME_KEY = "parrotpass:theme";
-const STORAGE_MUTE_KEY = "parrotpass:muted";
 
 export default function ThemeAudioControls() {
   const audioRef = useRef(null);
+  const playRetryTimerRef = useRef(null);
   const [theme, setTheme] = useState("dark");
   const [isMuted, setIsMuted] = useState(false);
 
@@ -15,25 +15,85 @@ export default function ThemeAudioControls() {
     const preferredTheme = savedTheme === "light" ? "light" : "dark";
     setTheme(preferredTheme);
     document.documentElement.classList.toggle("dark", preferredTheme === "dark");
-
-    const savedMute = window.localStorage.getItem(STORAGE_MUTE_KEY) === "1";
-    setIsMuted(savedMute);
   }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    audio.volume = 1;
     audio.muted = isMuted;
     const tryPlay = async () => {
       try {
         await audio.play();
       } catch {
-        audio.muted = true;
-        setIsMuted(true);
+        // Some browsers require user interaction before playback.
       }
     };
     tryPlay();
+  }, [isMuted]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || isMuted) return;
+
+    const tryPlay = async () => {
+      try {
+        if (audio.paused) {
+          await audio.play();
+        }
+      } catch {
+        // Ignore: playback policies can still block.
+      }
+    };
+
+    const onFirstInteraction = async () => {
+      try {
+        await audio.play();
+      } catch {
+        // Ignore: playback policies can still block.
+      }
+    };
+
+    const setupRetry = () => {
+      if (playRetryTimerRef.current) return;
+      playRetryTimerRef.current = window.setInterval(() => {
+        if (!audio.paused) {
+          window.clearInterval(playRetryTimerRef.current);
+          playRetryTimerRef.current = null;
+          return;
+        }
+        tryPlay();
+      }, 1500);
+    };
+
+    const clearRetry = () => {
+      if (!playRetryTimerRef.current) return;
+      window.clearInterval(playRetryTimerRef.current);
+      playRetryTimerRef.current = null;
+    };
+
+    tryPlay();
+    setupRetry();
+
+    window.addEventListener("pointerdown", onFirstInteraction, { once: true });
+    window.addEventListener("keydown", onFirstInteraction, { once: true });
+    window.addEventListener("focus", tryPlay);
+    window.addEventListener("pageshow", tryPlay);
+    document.addEventListener("visibilitychange", tryPlay);
+    audio.addEventListener("canplaythrough", tryPlay);
+    audio.addEventListener("playing", clearRetry);
+
+    return () => {
+      window.removeEventListener("pointerdown", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+      window.removeEventListener("focus", tryPlay);
+      window.removeEventListener("pageshow", tryPlay);
+      document.removeEventListener("visibilitychange", tryPlay);
+      audio.removeEventListener("canplaythrough", tryPlay);
+      audio.removeEventListener("playing", clearRetry);
+      clearRetry();
+    };
   }, [isMuted]);
 
   const toggleTheme = () => {
@@ -44,14 +104,12 @@ export default function ThemeAudioControls() {
   };
 
   const toggleMute = () => {
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    window.localStorage.setItem(STORAGE_MUTE_KEY, nextMuted ? "1" : "0");
+    setIsMuted((prev) => !prev);
   };
 
   return (
     <>
-      <audio ref={audioRef} src="/10ksong.mp3" loop autoPlay preload="auto" />
+      <audio ref={audioRef} src="/10ksong.mp3" loop autoPlay preload="auto" playsInline />
       <div className="fixed right-3 top-3 z-50 flex gap-2 sm:right-5 sm:top-5">
         <button
           onClick={toggleTheme}

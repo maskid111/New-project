@@ -221,10 +221,6 @@ export default function HomePage() {
           </>
         )}
 
-        <footer className="pb-4 pt-1 text-center text-xs text-slate-600 dark:text-slate-500">
-          Need help? Confirm your X app callback URL is set to{" "}
-          <span className="text-slate-700 dark:text-slate-300">http://localhost:5000/auth/x/callback</span>.
-        </footer>
       </div>
     </main>
   );
