@@ -39,7 +39,6 @@ const FALLBACK_AVATAR = "/parrotpass-nft-art.png";
 
 const DashboardCard = forwardRef(function DashboardCard(
   {
-    xUsername,
     xProfileImageUrl,
     walletAddress,
     nftCount,
@@ -50,7 +49,6 @@ const DashboardCard = forwardRef(function DashboardCard(
   ref
 ) {
   const [avatarSrc, setAvatarSrc] = useState(xProfileImageUrl || FALLBACK_AVATAR);
-  const cleanUsername = useMemo(() => (xUsername || "").replace(/^@/, ""), [xUsername]);
   const cardDate = useMemo(() => formatCardDate(), []);
   const theme = useMemo(() => tierTheme(tierName), [tierName]);
   const txCount = Number(totalTransactions || 0).toLocaleString();
@@ -69,7 +67,7 @@ const DashboardCard = forwardRef(function DashboardCard(
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.92)_0%,rgba(30,41,59,0.86)_45%,rgba(15,23,42,0.95)_100%)]" />
         <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${theme.glow}`} />
         <div className="relative grid grid-cols-5 gap-5 p-6">
-          <section className="col-span-3 flex flex-col">
+          <section className="col-span-3 flex min-w-0 flex-col">
             <div className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
                 <img
@@ -79,7 +77,7 @@ const DashboardCard = forwardRef(function DashboardCard(
                 />
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-200/90">ParrotPass Profile</p>
-                  <p className="truncate text-[28px] font-extrabold leading-none text-white">The 10k Squad</p>
+                  <p className="truncate text-[26px] font-extrabold leading-none text-white">The 10k Squad</p>
                   <p className="mt-2 font-mono text-xs text-slate-300">{shortAddress(walletAddress)}</p>
                 </div>
               </div>
@@ -98,11 +96,13 @@ const DashboardCard = forwardRef(function DashboardCard(
             <div className="mt-4 rounded-2xl border border-white/15 bg-black/25 p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Current Rank</p>
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.pill}`}>
+                <span
+                  className={`max-w-[190px] truncate whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${theme.pill}`}
+                >
                   {tierName}
                 </span>
               </div>
-              <p className="mt-2 text-sm italic text-slate-200">{tierRemark}</p>
+              <p className="mt-2 break-words text-sm italic text-slate-200">{tierRemark}</p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800/90">
                 <div className="h-full w-4/5 rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-300" />
               </div>
@@ -115,7 +115,7 @@ const DashboardCard = forwardRef(function DashboardCard(
             <p className="mt-2 text-xs font-medium text-slate-300">Influenced by @buildanythingso</p>
           </section>
 
-          <section className="col-span-2">
+          <section className="col-span-2 min-w-0">
             <div className="relative h-full min-h-[332px] overflow-hidden rounded-2xl border border-white/15 bg-black/25">
               <img
                 src={avatarSrc}
@@ -124,18 +124,18 @@ const DashboardCard = forwardRef(function DashboardCard(
                 onError={() => setAvatarSrc(FALLBACK_AVATAR)}
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute inset-x-0 top-0 flex justify-between px-4 py-4">
-                <span className="rounded-full border border-white/25 bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
+              <div className="absolute inset-x-0 top-0 flex min-w-0 justify-between gap-2 px-4 py-4">
+                <span className="max-w-[112px] truncate whitespace-nowrap rounded-full border border-white/25 bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-100">
                   Signature Art
                 </span>
-                <span className="rounded-full border border-white/25 bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
+                <span className="max-w-[100px] truncate whitespace-nowrap rounded-full border border-white/25 bg-black/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-100">
                   10K Squad
                 </span>
               </div>
               <div className="absolute inset-x-0 bottom-0 p-4">
                 <div className="rounded-xl border border-white/20 bg-black/45 p-3">
                   <p className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Collector Identity</p>
-                  <p className="mt-1 truncate text-sm font-semibold text-slate-100">@{cleanUsername || "unlinked"}</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-100">The 10k Squad</p>
                 </div>
               </div>
             </div>

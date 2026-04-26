@@ -1,8 +1,13 @@
 "use client";
 
-import { toPng } from "html-to-image";
+import { toBlob, toPng } from "html-to-image";
 
 export default function DownloadActions({ cardRef, fileName = "parrotpass-card.png", onMessage }) {
+  const isIOS = () => {
+    if (typeof navigator === "undefined") return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  };
+
   const onDownload = async () => {
     try {
       if (!cardRef?.current) {
@@ -10,7 +15,31 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
         return;
       }
 
-      const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+      const exportOptions = { cacheBust: true, pixelRatio: 2 };
+
+      // iOS Safari often blocks/ignores direct a[download] for data URLs.
+      // Fallback: use Web Share (with image file) or open image in a new tab for manual save.
+      if (isIOS()) {
+        const blob = await toBlob(cardRef.current, exportOptions);
+        if (!blob) {
+          throw new Error("Could not build image blob");
+        }
+
+        const file = new File([blob], fileName, { type: "image/png" });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "ParrotPass Card" });
+          onMessage?.("Card ready to share/save.");
+          return;
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, "_blank", "noopener,noreferrer");
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+        onMessage?.("Image opened in new tab. Long-press it and tap Save to Photos.");
+        return;
+      }
+
+      const dataUrl = await toPng(cardRef.current, exportOptions);
       const link = document.createElement("a");
       link.download = fileName;
       link.href = dataUrl;
