@@ -39,6 +39,7 @@ const FALLBACK_AVATAR = "/parrotpass-nft-art.png";
 
 const DashboardCard = forwardRef(function DashboardCard(
   {
+    xUsername,
     xProfileImageUrl,
     walletAddress,
     nftCount,
@@ -49,6 +50,7 @@ const DashboardCard = forwardRef(function DashboardCard(
   ref
 ) {
   const [avatarSrc, setAvatarSrc] = useState(xProfileImageUrl || FALLBACK_AVATAR);
+  const cleanUsername = useMemo(() => (xUsername || "").replace(/^@/, ""), [xUsername]);
   const cardDate = useMemo(() => formatCardDate(), []);
   const theme = useMemo(() => tierTheme(tierName), [tierName]);
   const txCount = Number(totalTransactions || 0).toLocaleString();
@@ -133,7 +135,7 @@ const DashboardCard = forwardRef(function DashboardCard(
               <div className="absolute inset-x-0 bottom-0 p-4">
                 <div className="rounded-xl border border-white/20 bg-black/45 p-3">
                   <p className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Collector Identity</p>
-                  <p className="mt-1 truncate text-sm font-semibold text-slate-100">The 10k Squad</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-100">@{cleanUsername || "unlinked"}</p>
                 </div>
               </div>
             </div>
