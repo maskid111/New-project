@@ -73,6 +73,10 @@ const DashboardCard = forwardRef(function DashboardCard(
                 <img
                   src="/parrotpass-nft-art.png"
                   alt="ParrotPass NFT"
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
+                  loading="eager"
+                  decoding="async"
                   className="h-20 w-20 rounded-2xl border border-white/20 object-cover shadow-[0_6px_22px_rgba(15,23,42,0.5)]"
                 />
                 <div className="min-w-0">
@@ -120,6 +124,10 @@ const DashboardCard = forwardRef(function DashboardCard(
               <img
                 src={avatarSrc}
                 alt="X profile"
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                loading="eager"
+                decoding="async"
                 className="h-full w-full object-cover"
                 onError={() => setAvatarSrc(FALLBACK_AVATAR)}
               />

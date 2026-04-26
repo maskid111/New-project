@@ -1,11 +1,104 @@
 "use client";
 
-import { toBlob, toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 
 export default function DownloadActions({ cardRef, fileName = "parrotpass-card.png", onMessage }) {
   const isIOS = () => {
     if (typeof navigator === "undefined") return false;
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  };
+
+  const waitForImages = async (root) => {
+    const images = Array.from(root.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+              resolve();
+              return;
+            }
+
+            const done = () => {
+              img.removeEventListener("load", done);
+              img.removeEventListener("error", done);
+              resolve();
+            };
+
+            img.addEventListener("load", done);
+            img.addEventListener("error", done);
+          })
+      )
+    );
+  };
+
+  const blobToDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const inlineImageSources = async (root) => {
+    const images = Array.from(root.querySelectorAll("img"));
+    await Promise.all(
+      images.map(async (img) => {
+        const src = img.getAttribute("src");
+        if (!src || src.startsWith("data:")) return;
+
+        try {
+          const response = await fetch(src, { cache: "no-store" });
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const dataUrl = await blobToDataUrl(blob);
+          if (typeof dataUrl === "string") {
+            img.setAttribute("src", dataUrl);
+          }
+        } catch {
+          // Keep original src if fetch/inline fails.
+        }
+      })
+    );
+  };
+
+  const buildCardBlob = async (sourceNode) => {
+    const clone = sourceNode.cloneNode(true);
+    clone.style.margin = "0";
+
+    const offscreen = document.createElement("div");
+    offscreen.style.position = "fixed";
+    offscreen.style.left = "-100000px";
+    offscreen.style.top = "0";
+    offscreen.style.pointerEvents = "none";
+    offscreen.style.opacity = "0";
+    offscreen.appendChild(clone);
+    document.body.appendChild(offscreen);
+
+    try {
+      await waitForImages(clone);
+      await inlineImageSources(clone);
+
+      const blob = await toBlob(clone, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#080d19"
+      });
+      return blob;
+    } finally {
+      document.body.removeChild(offscreen);
+    }
+  };
+
+  const triggerFileDownload = (blob, name) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = name;
+    link.href = objectUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
   };
 
   const onDownload = async () => {
@@ -15,16 +108,12 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
         return;
       }
 
-      const exportOptions = { cacheBust: true, pixelRatio: 2 };
+      const blob = await buildCardBlob(cardRef.current);
+      if (!blob) {
+        throw new Error("Could not build image blob");
+      }
 
-      // iOS Safari often blocks/ignores direct a[download] for data URLs.
-      // Fallback: use Web Share (with image file) or open image in a new tab for manual save.
       if (isIOS()) {
-        const blob = await toBlob(cardRef.current, exportOptions);
-        if (!blob) {
-          throw new Error("Could not build image blob");
-        }
-
         const file = new File([blob], fileName, { type: "image/png" });
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           await navigator.share({ files: [file], title: "ParrotPass Card" });
@@ -39,11 +128,8 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
         return;
       }
 
-      const dataUrl = await toPng(cardRef.current, exportOptions);
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = dataUrl;
-      link.click();
+      // Android/desktop: direct file download for expected behavior.
+      triggerFileDownload(blob, fileName);
       onMessage?.("Card downloaded.");
     } catch {
       onMessage?.("Could not download card. Please try again.");
