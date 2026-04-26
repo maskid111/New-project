@@ -110,6 +110,7 @@ const DashboardCard = forwardRef(function DashboardCard(
               <span>parrotpass.io</span>
               <span>Verified Wallet Data</span>
             </div>
+            <p className="mt-2 text-xs font-medium text-slate-300">Influenced by @buildanythingso</p>
           </section>
 
           <section className="col-span-2">
