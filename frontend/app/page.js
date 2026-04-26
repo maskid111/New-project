@@ -191,18 +191,19 @@ export default function HomePage() {
 
             <section className="rounded-xl border border-slate-300 bg-white/90 p-5 dark:border-slate-700 dark:bg-surface-elevated/90">
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Download card preview</h2>
-              <div className="mt-4 overflow-x-auto">
-                <div className="mx-auto w-fit">
-                <DashboardCard
-                  ref={cardRef}
-                  xUsername={xProfile.username}
-                  xProfileImageUrl={buildProxiedXAvatarUrl(xProfile.profileImageUrl)}
-                  walletAddress={selectedAddress}
-                  nftCount={nftCount}
-                  totalTransactions={activity.totalTransactions}
-                  tierName={activity.tierName}
-                  tierRemark={activity.tierRemark}
-                />
+              <div className="mt-4 overflow-hidden">
+                <div className="mx-auto w-full max-w-[760px]">
+                  <div className="h-[190px] w-[760px] origin-top-left scale-[0.42] sm:h-[270px] sm:scale-[0.62] md:h-[360px] md:scale-[0.82] lg:h-auto lg:w-auto lg:scale-100">
+                    <DashboardCard
+                      ref={cardRef}
+                      xProfileImageUrl={buildProxiedXAvatarUrl(xProfile.profileImageUrl)}
+                      walletAddress={selectedAddress}
+                      nftCount={nftCount}
+                      totalTransactions={activity.totalTransactions}
+                      tierName={activity.tierName}
+                      tierRemark={activity.tierRemark}
+                    />
+                  </div>
                 </div>
               </div>
             </section>
