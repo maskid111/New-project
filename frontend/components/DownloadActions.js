@@ -40,8 +40,39 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       reader.readAsDataURL(blob);
     });
 
-  const inlineImageSources = async (root) => {
-    const images = Array.from(root.querySelectorAll("img"));
+  const imageElementToDataUrl = (img) => {
+    try {
+      if (!img?.naturalWidth || !img?.naturalHeight) return "";
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) return "";
+      context.drawImage(img, 0, 0);
+      return canvas.toDataURL("image/png");
+    } catch {
+      return "";
+    }
+  };
+
+  const inlineImageSources = async (sourceRoot, cloneRoot) => {
+    const sourceImages = Array.from(sourceRoot.querySelectorAll("img"));
+    const cloneImages = Array.from(cloneRoot.querySelectorAll("img"));
+
+    // First attempt: use already-rendered image pixels from the live DOM.
+    for (let i = 0; i < cloneImages.length; i += 1) {
+      const sourceImg = sourceImages[i];
+      const cloneImg = cloneImages[i];
+      if (!cloneImg) continue;
+
+      const renderedDataUrl = imageElementToDataUrl(sourceImg);
+      if (renderedDataUrl) {
+        cloneImg.setAttribute("src", renderedDataUrl);
+      }
+    }
+
+    // Fallback: fetch and inline any image that is still URL-based.
+    const images = Array.from(cloneRoot.querySelectorAll("img"));
     await Promise.all(
       images.map(async (img) => {
         const src = img.getAttribute("src");
@@ -68,20 +99,23 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
     const offscreen = document.createElement("div");
     offscreen.style.position = "fixed";
-    offscreen.style.left = "-100000px";
+    offscreen.style.left = "0";
     offscreen.style.top = "0";
+    offscreen.style.transform = "translateX(-200vw)";
     offscreen.style.pointerEvents = "none";
-    offscreen.style.opacity = "0";
+    offscreen.style.opacity = "1";
     offscreen.appendChild(clone);
     document.body.appendChild(offscreen);
 
     try {
+      await waitForImages(sourceNode);
+      await inlineImageSources(sourceNode, clone);
       await waitForImages(clone);
-      await inlineImageSources(clone);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
       const blob = await toBlob(clone, {
         cacheBust: true,
-        pixelRatio: 2,
+        pixelRatio: isIOS() ? 1.5 : 2,
         backgroundColor: "#080d19"
       });
       return blob;
