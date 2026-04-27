@@ -42,7 +42,7 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       reader.readAsDataURL(blob);
     });
 
-  const inlineImageSources = async (root) => {
+  const inlineAllImages = async (root) => {
     const images = Array.from(root.querySelectorAll("img"));
     await Promise.all(
       images.map(async (img) => {
@@ -51,23 +51,31 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
         try {
           const absoluteSrc = new URL(src, window.location.href).toString();
-          const response = await fetch(absoluteSrc, {
-            mode: "cors",
-            credentials: "omit",
-            cache: "no-store"
-          });
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(absoluteSrc)}`;
+          const response = await fetch(proxyUrl, { cache: "no-store" });
           if (!response.ok) return;
+
           const blob = await response.blob();
           const dataUrl = await blobToDataUrl(blob);
-          if (typeof dataUrl === "string") {
+          if (typeof dataUrl !== "string") return;
+
+          img.removeAttribute("srcset");
+          img.removeAttribute("sizes");
+
+          await new Promise((resolve) => {
+            const done = () => {
+              img.removeEventListener("load", done);
+              img.removeEventListener("error", done);
+              resolve();
+            };
+
+            img.addEventListener("load", done);
+            img.addEventListener("error", done);
             img.setAttribute("src", dataUrl);
-            // Wait for the cloned img to re-render with its new data: src
-            await new Promise((resolve) => {
-              if (img.complete && img.naturalWidth > 0) { resolve(); return; }
-              img.onload = resolve;
-              img.onerror = resolve;
-            });
-          }
+
+            // Guard against missed events.
+            setTimeout(done, 1500);
+          });
         } catch {
           // Keep original src if fetch/inline fails.
         }
@@ -90,9 +98,9 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
     try {
       await waitForImages(clone);
-      await inlineImageSources(clone);
-      // Give iOS a frame to paint the newly inlined images before capture
-      await new Promise((r) => setTimeout(r, 150));
+      await inlineAllImages(clone);
+      // Give WebKit enough time to settle repaints after src swapping.
+      await new Promise((r) => setTimeout(r, 300));
 
       const blob = await toBlob(clone, {
         cacheBust: true,
