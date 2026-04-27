@@ -25,6 +25,8 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
               resolve();
             };
 
+            img.setAttribute("loading", "eager");
+            img.setAttribute("decoding", "sync");
             img.addEventListener("load", done);
             img.addEventListener("error", done);
           })
@@ -44,11 +46,16 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
     const images = Array.from(root.querySelectorAll("img"));
     await Promise.all(
       images.map(async (img) => {
-        const src = img.getAttribute("src");
-        if (!src || src.startsWith("data:")) return;
+        const src = img.currentSrc || img.getAttribute("src");
+        if (!src || src.startsWith("data:") || src.startsWith("blob:")) return;
 
         try {
-          const response = await fetch(src, { cache: "no-store" });
+          const absoluteSrc = new URL(src, window.location.href).toString();
+          const response = await fetch(absoluteSrc, {
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-store"
+          });
           if (!response.ok) return;
           const blob = await response.blob();
           const dataUrl = await blobToDataUrl(blob);
@@ -68,10 +75,10 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
     const offscreen = document.createElement("div");
     offscreen.style.position = "fixed";
-    offscreen.style.left = "-100000px";
+    offscreen.style.left = "-9999px";
     offscreen.style.top = "0";
     offscreen.style.pointerEvents = "none";
-    offscreen.style.opacity = "0";
+    offscreen.style.opacity = "0.01";
     offscreen.appendChild(clone);
     document.body.appendChild(offscreen);
 
@@ -82,7 +89,8 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       const blob = await toBlob(clone, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: "#080d19"
+        backgroundColor: "#080d19",
+        includeQueryParams: true
       });
       return blob;
     } finally {
