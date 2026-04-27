@@ -61,6 +61,12 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
           const dataUrl = await blobToDataUrl(blob);
           if (typeof dataUrl === "string") {
             img.setAttribute("src", dataUrl);
+            // Wait for the cloned img to re-render with its new data: src
+            await new Promise((resolve) => {
+              if (img.complete && img.naturalWidth > 0) { resolve(); return; }
+              img.onload = resolve;
+              img.onerror = resolve;
+            });
           }
         } catch {
           // Keep original src if fetch/inline fails.
@@ -85,6 +91,8 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
     try {
       await waitForImages(clone);
       await inlineImageSources(clone);
+      // Give iOS a frame to paint the newly inlined images before capture
+      await new Promise((r) => setTimeout(r, 150));
 
       const blob = await toBlob(clone, {
         cacheBust: true,
