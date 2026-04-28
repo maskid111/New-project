@@ -51,8 +51,9 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
         try {
           const absoluteSrc = new URL(src, window.location.href).toString();
-          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(absoluteSrc)}`;
-          const response = await fetch(proxyUrl, { cache: "no-store" });
+          const sameOrigin = new URL(absoluteSrc).origin === window.location.origin;
+          const requestUrl = sameOrigin ? absoluteSrc : `/api/proxy-image?url=${encodeURIComponent(absoluteSrc)}`;
+          const response = await fetch(requestUrl, { cache: "no-store" });
           if (!response.ok) return;
 
           const blob = await response.blob();
@@ -89,10 +90,11 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
     const offscreen = document.createElement("div");
     offscreen.style.position = "fixed";
-    offscreen.style.left = "-9999px";
+    offscreen.style.left = "0";
     offscreen.style.top = "0";
+    offscreen.style.transform = "translateX(-200vw)";
     offscreen.style.pointerEvents = "none";
-    offscreen.style.opacity = "0.01";
+    offscreen.style.opacity = "1";
     offscreen.appendChild(clone);
     document.body.appendChild(offscreen);
 
