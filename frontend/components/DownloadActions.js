@@ -58,10 +58,41 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       reader.readAsDataURL(blob);
     });
 
-  const inlineAllImages = async (root) => {
+  const imageToDataUrlFromRenderedPixels = (img) => {
+    try {
+      if (!img || !img.naturalWidth || !img.naturalHeight) return "";
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return "";
+      ctx.drawImage(img, 0, 0);
+      return canvas.toDataURL("image/png");
+    } catch {
+      return "";
+    }
+  };
+
+  const inlineAllImages = async (root, sourceRoot) => {
     const images = Array.from(root.querySelectorAll("img"));
+    const sourceImages = sourceRoot ? Array.from(sourceRoot.querySelectorAll("img")) : [];
     const objectUrls = [];
 
+    // Attempt 1: copy already-rendered pixels from live DOM into clone.
+    for (let i = 0; i < images.length; i += 1) {
+      const sourceImg = sourceImages[i];
+      const cloneImg = images[i];
+      if (!sourceImg || !cloneImg) continue;
+      const renderedDataUrl = imageToDataUrlFromRenderedPixels(sourceImg);
+      if (!renderedDataUrl) continue;
+
+      cloneImg.removeAttribute("srcset");
+      cloneImg.removeAttribute("sizes");
+      cloneImg.setAttribute("src", renderedDataUrl);
+      await waitForImagePaint(cloneImg);
+    }
+
+    // Attempt 2: fetch and inline any remaining non-data URLs.
     await Promise.all(
       images.map(async (img) => {
         const src = img.currentSrc || img.getAttribute("src");
@@ -109,8 +140,9 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
     let cleanupInlinedImages = null;
     try {
+      await waitForImages(sourceNode);
       await waitForImages(clone);
-      cleanupInlinedImages = await inlineAllImages(clone);
+      cleanupInlinedImages = await inlineAllImages(clone, sourceNode);
       // Give WebKit enough time to settle repaints after src swapping.
       await new Promise((r) => setTimeout(r, 300));
 
@@ -141,9 +173,16 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
   };
 
   const onDownload = async () => {
+    let iosTab = null;
+    if (isIOS()) {
+      // Open immediately in user gesture context to avoid iOS popup blocking after async work.
+      iosTab = window.open("about:blank", "_blank");
+    }
+
     try {
       if (!cardRef?.current) {
         onMessage?.("Card preview is not ready yet.");
+        if (iosTab && !iosTab.closed) iosTab.close();
         return;
       }
 
@@ -158,6 +197,7 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
           if (navigator.share && navigator.canShare?.({ files: [file] })) {
             await navigator.share({ files: [file], title: "ParrotPass Card" });
             onMessage?.("Card ready to share/save.");
+            if (iosTab && !iosTab.closed) iosTab.close();
             return;
           }
         } catch {
@@ -166,9 +206,8 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
         // iOS fallback: open a data URL tab for long-press save.
         const dataUrl = await blobToDataUrl(blob);
-        const newTab = window.open("", "_blank");
-        if (newTab && typeof dataUrl === "string") {
-          newTab.location.href = dataUrl;
+        if (iosTab && typeof dataUrl === "string") {
+          iosTab.location.href = dataUrl;
           onMessage?.("Image opened in new tab. Long-press it and tap Save to Photos.");
           return;
         }
