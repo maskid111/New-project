@@ -127,6 +127,12 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
   const buildCardBlob = async (sourceNode) => {
     const clone = sourceNode.cloneNode(true);
     clone.style.margin = "0";
+    clone.style.transform = "none";
+    clone.style.transformOrigin = "top left";
+    clone.style.width = `${sourceNode.scrollWidth}px`;
+    clone.style.height = `${sourceNode.scrollHeight}px`;
+    clone.style.maxWidth = "none";
+    clone.style.minWidth = `${sourceNode.scrollWidth}px`;
 
     const offscreen = document.createElement("div");
     offscreen.style.position = "fixed";
@@ -148,7 +154,9 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
       const blob = await toBlob(clone, {
         cacheBust: true,
-        pixelRatio: 2,
+        pixelRatio: isIOS() ? 3 : 2,
+        width: sourceNode.scrollWidth,
+        height: sourceNode.scrollHeight,
         backgroundColor: "#080d19",
         includeQueryParams: true
       });
