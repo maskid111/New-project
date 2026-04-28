@@ -50,6 +50,14 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       setTimeout(done, 1500);
     });
 
+  const blobToDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
   const inlineAllImages = async (root) => {
     const images = Array.from(root.querySelectorAll("img"));
     const objectUrls = [];
@@ -146,16 +154,28 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
 
       if (isIOS()) {
         const file = new File([blob], fileName, { type: "image/png" });
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "ParrotPass Card" });
-          onMessage?.("Card ready to share/save.");
+        try {
+          if (navigator.share && navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: "ParrotPass Card" });
+            onMessage?.("Card ready to share/save.");
+            return;
+          }
+        } catch {
+          // If share is canceled or fails, continue to fallback.
+        }
+
+        // iOS fallback: open a data URL tab for long-press save.
+        const dataUrl = await blobToDataUrl(blob);
+        const newTab = window.open("", "_blank");
+        if (newTab && typeof dataUrl === "string") {
+          newTab.location.href = dataUrl;
+          onMessage?.("Image opened in new tab. Long-press it and tap Save to Photos.");
           return;
         }
 
-        const objectUrl = URL.createObjectURL(blob);
-        window.open(objectUrl, "_blank", "noopener,noreferrer");
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
-        onMessage?.("Image opened in new tab. Long-press it and tap Save to Photos.");
+        // Last resort if popup is blocked.
+        triggerFileDownload(blob, fileName);
+        onMessage?.("Card downloaded.");
         return;
       }
 
