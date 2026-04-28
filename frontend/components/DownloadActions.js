@@ -34,16 +34,26 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
     );
   };
 
-  const blobToDataUrl = (blob) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+  const waitForImagePaint = (img) =>
+    new Promise((resolve) => {
+      const done = () => {
+        img.removeEventListener("load", done);
+        img.removeEventListener("error", done);
+        resolve();
+      };
+      if (img.complete && img.naturalWidth > 0) {
+        resolve();
+        return;
+      }
+      img.addEventListener("load", done);
+      img.addEventListener("error", done);
+      setTimeout(done, 1500);
     });
 
   const inlineAllImages = async (root) => {
     const images = Array.from(root.querySelectorAll("img"));
+    const objectUrls = [];
+
     await Promise.all(
       images.map(async (img) => {
         const src = img.currentSrc || img.getAttribute("src");
@@ -57,31 +67,22 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
           if (!response.ok) return;
 
           const blob = await response.blob();
-          const dataUrl = await blobToDataUrl(blob);
-          if (typeof dataUrl !== "string") return;
+          const blobUrl = URL.createObjectURL(blob);
+          objectUrls.push(blobUrl);
 
           img.removeAttribute("srcset");
           img.removeAttribute("sizes");
-
-          await new Promise((resolve) => {
-            const done = () => {
-              img.removeEventListener("load", done);
-              img.removeEventListener("error", done);
-              resolve();
-            };
-
-            img.addEventListener("load", done);
-            img.addEventListener("error", done);
-            img.setAttribute("src", dataUrl);
-
-            // Guard against missed events.
-            setTimeout(done, 1500);
-          });
+          img.setAttribute("src", blobUrl);
+          await waitForImagePaint(img);
         } catch {
           // Keep original src if fetch/inline fails.
         }
       })
     );
+
+    return () => {
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
   };
 
   const buildCardBlob = async (sourceNode) => {
@@ -98,9 +99,10 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
     offscreen.appendChild(clone);
     document.body.appendChild(offscreen);
 
+    let cleanupInlinedImages = null;
     try {
       await waitForImages(clone);
-      await inlineAllImages(clone);
+      cleanupInlinedImages = await inlineAllImages(clone);
       // Give WebKit enough time to settle repaints after src swapping.
       await new Promise((r) => setTimeout(r, 300));
 
@@ -112,6 +114,9 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       });
       return blob;
     } finally {
+      if (cleanupInlinedImages) {
+        cleanupInlinedImages();
+      }
       document.body.removeChild(offscreen);
     }
   };
