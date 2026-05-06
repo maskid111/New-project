@@ -71,7 +71,21 @@ export default function HomePage() {
   const statusMessage = useMemo(() => {
     if (verificationState === "loading") return "Verifying wallet ownership...";
     if (verificationState === "success") return "Access granted. Connect X to generate your card.";
-    if (verificationState === "denied") return "Access denied. You must hold 10K Squad NFT";
+    if (verificationState === "denied") {
+      return (
+        <>
+          Access denied. You must hold 10K Squad NFT, get one here{" "}
+          <a
+            href="https://opensea.io/collection/the-10k-squad-350905768"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            https://opensea.io/collection/the-10k-squad-350905768
+          </a>
+        </>
+      );
+    }
     if (verificationState === "error") return error;
     if (error) return error;
     return "Paste your Monad address to start verification.";

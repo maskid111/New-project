@@ -1,8 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { toBlob } from "html-to-image";
 
 export default function DownloadActions({ cardRef, fileName = "parrotpass-card.png", onMessage }) {
+  const [downloaded, setDownloaded] = useState(false);
+
+  useEffect(() => {
+    setDownloaded(false);
+  }, [fileName]);
+
   const isIOS = () => {
     if (typeof navigator === "undefined") return false;
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -78,7 +85,6 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
     const sourceImages = sourceRoot ? Array.from(sourceRoot.querySelectorAll("img")) : [];
     const objectUrls = [];
 
-    // Attempt 1: copy already-rendered pixels from live DOM into clone.
     for (let i = 0; i < images.length; i += 1) {
       const sourceImg = sourceImages[i];
       const cloneImg = images[i];
@@ -92,7 +98,6 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       await waitForImagePaint(cloneImg);
     }
 
-    // Attempt 2: fetch and inline any remaining non-data URLs.
     await Promise.all(
       images.map(async (img) => {
         const src = img.currentSrc || img.getAttribute("src");
@@ -149,7 +154,6 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       await waitForImages(sourceNode);
       await waitForImages(clone);
       cleanupInlinedImages = await inlineAllImages(clone, sourceNode);
-      // Give WebKit enough time to settle repaints after src swapping.
       await new Promise((r) => setTimeout(r, 300));
 
       const blob = await toBlob(clone, {
@@ -162,9 +166,7 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       });
       return blob;
     } finally {
-      if (cleanupInlinedImages) {
-        cleanupInlinedImages();
-      }
+      if (cleanupInlinedImages) cleanupInlinedImages();
       document.body.removeChild(offscreen);
     }
   };
@@ -183,7 +185,6 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
   const onDownload = async () => {
     let iosTab = null;
     if (isIOS()) {
-      // Open immediately in user gesture context to avoid iOS popup blocking after async work.
       iosTab = window.open("about:blank", "_blank");
     }
 
@@ -195,47 +196,55 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       }
 
       const blob = await buildCardBlob(cardRef.current);
-      if (!blob) {
-        throw new Error("Could not build image blob");
-      }
+      if (!blob) throw new Error("Could not build image blob");
 
       if (isIOS()) {
         const file = new File([blob], fileName, { type: "image/png" });
         try {
           if (navigator.share && navigator.canShare?.({ files: [file] })) {
             await navigator.share({ files: [file], title: "ParrotPass Card" });
-            onMessage?.("Card ready to share/save.");
+            setDownloaded(true);
+            onMessage?.("Image downloaded");
             if (iosTab && !iosTab.closed) iosTab.close();
             return;
           }
         } catch {
-          // If share is canceled or fails, continue to fallback.
+          // Continue to fallback.
         }
 
-        // iOS fallback: open a data URL tab for long-press save.
         const dataUrl = await blobToDataUrl(blob);
         if (iosTab && typeof dataUrl === "string") {
           iosTab.location.href = dataUrl;
-          onMessage?.("Image opened in new tab. Long-press it and tap Save to Photos.");
+          setDownloaded(true);
+          onMessage?.("Image downloaded");
           return;
         }
 
-        // Last resort if popup is blocked.
         triggerFileDownload(blob, fileName);
-        onMessage?.("Card downloaded.");
+        setDownloaded(true);
+        onMessage?.("Image downloaded");
         return;
       }
 
-      // Android/desktop: direct file download for expected behavior.
       triggerFileDownload(blob, fileName);
-      onMessage?.("Card downloaded.");
+      setDownloaded(true);
+      onMessage?.("Image downloaded");
     } catch {
       onMessage?.("Could not download card. Please try again.");
     }
   };
 
   const onShare = () => {
-    const text = "I just unlocked my ParrotPass 🦜 on Monad. What's your rank?";
+    const text = `Your wallet tells a story.
+
+I just generated my ParrotPass. It reveals my onchain identity based on what I actually do onchain
+
+Inspired by @buildanythingso, Powered by @monad, Made for @the10ksquad holders.
+
+Try yours 👉 https://parrotpassio.vercel.app/
+
+Quote this tweet with your ParrotPass card 👇
+Let’s see who’s really part of the squad 🦜`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -247,9 +256,12 @@ export default function DownloadActions({ cardRef, fileName = "parrotpass-card.p
       >
         Download Card
       </button>
-      <button onClick={onShare} className="text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
-        Share on X
-      </button>
+      {downloaded ? (
+        <button onClick={onShare} className="text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
+          Share on X
+        </button>
+      ) : null}
     </div>
   );
 }
+
